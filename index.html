@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wie Betaalt? 🍽️</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0c0a;
+    --surface: #1a1714;
+    --card: #232018;
+    --accent: #f0a500;
+    --accent2: #e05c2a;
+    --danger: #e03a2a;
+    --success: #2aad6b;
+    --text: #f5efe6;
+    --muted: #7a7068;
+    --border: #2e2a24;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Texture overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.4;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 0 80px; }
+
+  /* Header */
+  header {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    padding: 28px 24px 22px;
+    position: relative; overflow: hidden;
+  }
+  header::after {
+    content: '🍽️';
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    font-size: 64px; opacity: 0.18;
+  }
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px; letter-spacing: 2px;
+    color: var(--bg); line-height: 1;
+  }
+  header p { color: rgba(14,12,10,0.65); font-size: 13px; margin-top: 4px; font-weight: 500; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    flex: 1; padding: 14px 8px; text-align: center;
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    cursor: pointer; border: none; background: none;
+    border-bottom: 3px solid transparent;
+    transition: all .2s; letter-spacing: .5px;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Sections */
+  .section { display: none; padding: 20px 16px; }
+  .section.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px; letter-spacing: 1.5px;
+    color: var(--accent); margin-bottom: 14px;
+  }
+
+  /* Inputs */
+  .field { margin-bottom: 12px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .8px; }
+  input[type=text], input[type=number] {
+    width: 100%; padding: 11px 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 15px;
+    outline: none; transition: border-color .2s;
+  }
+  input:focus { border-color: var(--accent); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 11px 20px; border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-weight: 700;
+    font-size: 14px; cursor: pointer; border: none;
+    transition: all .15s; letter-spacing: .3px;
+  }
+  .btn-primary { background: var(--accent); color: var(--bg); }
+  .btn-primary:hover { background: #ffc020; transform: translateY(-1px); }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { filter: brightness(1.1); }
+  .btn-success { background: var(--success); color: white; }
+  .btn-ghost {
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm { padding: 7px 14px; font-size: 12px; }
+  .btn-full { width: 100%; justify-content: center; }
+
+  /* Player list */
+  .player-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  .player-name { font-weight: 500; font-size: 15px; }
+  .player-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .badge {
+    display: inline-block; padding: 3px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: .5px;
+  }
+  .badge-warn { background: rgba(240,165,0,.15); color: var(--accent); border: 1px solid rgba(240,165,0,.3); }
+  .badge-danger { background: rgba(224,58,42,.15); color: var(--danger); border: 1px solid rgba(224,58,42,.3); }
+  .badge-success { background: rgba(42,173,107,.15); color: var(--success); border: 1px solid rgba(42,173,107,.3); }
+  .badge-muted { background: rgba(122,112,104,.1); color: var(--muted); border: 1px solid var(--border); }
+
+  /* Bid section */
+  .bid-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; border-radius: 10px;
+    margin-bottom: 8px; border: 1px solid var(--border);
+    transition: all .2s;
+  }
+  .bid-item.submitted { background: rgba(42,173,107,.08); border-color: rgba(42,173,107,.25); }
+  .bid-item.skipped { background: rgba(122,112,104,.06); border-color: var(--border); }
+  .bid-input-row { display: flex; gap: 8px; align-items: center; }
+  .bid-input-row input { flex: 1; }
+
+  /* Result */
+  .result-hero {
+    text-align: center; padding: 28px 16px;
+    background: linear-gradient(135deg, rgba(240,165,0,.12), rgba(224,92,42,.08));
+    border: 1px solid rgba(240,165,0,.2);
+    border-radius: 14px; margin-bottom: 16px;
+  }
+  .result-crown { font-size: 48px; margin-bottom: 8px; }
+  .result-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px; letter-spacing: 2px; color: var(--accent);
+  }
+  .result-label { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .result-amount {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px; color: var(--success); letter-spacing: 1px;
+    line-height: 1;
+  }
+  .result-detail { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  .breakdown { margin-top: 12px; }
+  .breakdown-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 12px; border-radius: 8px; margin-bottom: 6px;
+    background: var(--surface); border: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .breakdown-row.winner { background: rgba(240,165,0,.08); border-color: rgba(240,165,0,.2); }
+  .breakdown-row.skipper { background: rgba(224,58,42,.05); border-color: rgba(224,58,42,.15); }
+
+  /* History */
+  .round-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
+  }
+  .round-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .round-num { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1.5px; color: var(--accent); }
+  .round-date { font-size: 11px; color: var(--muted); }
+  .round-winner { font-weight: 700; margin-bottom: 4px; }
+  .round-bids { font-size: 12px; color: var(--muted); }
+
+  /* Penalty banner */
+  .penalty-banner {
+    background: rgba(224,58,42,.12); border: 1px solid rgba(224,58,42,.3);
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 12px;
+  }
+  .penalty-banner strong { color: var(--danger); font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 1px; }
+  .penalty-banner p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-icon { font-size: 40px; margin-bottom: 10px; }
+  .empty p { font-size: 14px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--accent); color: var(--bg);
+    padding: 12px 22px; border-radius: 30px;
+    font-weight: 700; font-size: 14px; z-index: 1000;
+    opacity: 0; transition: all .3s; pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  .flex-row { display: flex; gap: 8px; }
+  .flex-row .btn { flex: 1; justify-content: center; }
+
+  .skip-counter {
+    display: flex; gap: 4px; margin-top: 4px;
+  }
+  .skip-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border);
+  }
+  .skip-dot.filled { background: var(--danger); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Wie Betaalt?</h1>
+    <p>Hoogste bieder betaalt — maar vangt ook de pot 🎰</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('spelers')">👥 Spelers</button>
+    <button class="tab" onclick="showTab('ronde')">🎲 Ronde</button>
+    <button class="tab" onclick="showTab('geschiedenis')">📜 Historie</button>
+  </div>
+
+  <!-- SPELERS TAB -->
+  <div id="tab-spelers" class="section active">
+    <div class="card">
+      <div class="card-title">Nieuwe Speler Toevoegen</div>
+      <div class="field">
+        <label>Naam</label>
+        <input type="text" id="new-player-name" placeholder="bv. Javi, Saar, Tom..." />
+      </div>
+      <button class="btn btn-primary btn-full" onclick="addPlayer()">➕ Speler toevoegen</button>
+    </div>
+
+    <div id="player-list"></div>
+  </div>
+
+  <!-- RONDE TAB -->
+  <div id="tab-ronde" class="section">
+    <div id="penalty-section"></div>
+    <div id="bid-section"></div>
+  </div>
+
+  <!-- GESCHIEDENIS TAB -->
+  <div id="tab-geschiedenis" class="section">
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---- STATE ----
+let state = JSON.parse(localStorage.getItem('wiebetaalt') || 'null') || {
+  players: [],
+  history: [],
+  currentBids: {},
+  roundActive: false,
+};
+
+function save() {
+  localStorage.setItem('wiebetaalt', JSON.stringify(state));
+}
+
+// ---- TABS ----
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['spelers','ronde','geschiedenis'][i] === tab);
+  });
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'ronde') renderRonde();
+  if (tab === 'geschiedenis') renderGeschiedenis();
+  if (tab === 'spelers') renderSpelers();
+}
+
+// ---- TOAST ----
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ---- SPELERS ----
+function addPlayer() {
+  const input = document.getElementById('new-player-name');
+  const name = input.value.trim();
+  if (!name) return toast('Vul een naam in!');
+  if (state.players.find(p => p.name.toLowerCase() === name.toLowerCase())) return toast('Naam bestaat al!');
+  state.players.push({ name, skipStreak: 0, totalPaid: 0, totalReceived: 0, penalized: false });
+  input.value = '';
+  save();
+  renderSpelers();
+  toast(`${name} toegevoegd! 🎉`);
+}
+
+function removePlayer(idx) {
+  if (!confirm(`${state.players[idx].name} verwijderen?`)) return;
+  state.players.splice(idx, 1);
+  save();
+  renderSpelers();
+}
+
+function renderSpelers() {
+  const el = document.getElementById('player-list');
+  if (!state.players.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">👥</div><p>Nog geen spelers. Voeg er minimaal 2 toe!</p></div>`;
+    return;
+  }
+  el.innerHTML = state.players.map((p, i) => {
+    let badge = '';
+    if (p.penalized) badge = `<span class="badge badge-danger">🚫 STRAF</span>`;
+    else if (p.skipStreak >= 2) badge = `<span class="badge badge-warn">⚠️ ${p.skipStreak}/3 skips</span>`;
+    else if (p.skipStreak > 0) badge = `<span class="badge badge-muted">${p.skipStreak}/3 skips</span>`;
+
+    const dots = [0,1,2].map(d => `<div class="skip-dot ${d < p.skipStreak ? 'filled' : ''}"></div>`).join('');
+
+    return `
+      <div class="player-item">
+        <div>
+          <div class="player-name">${p.name} ${badge}</div>
+          <div class="player-meta">
+            Betaald: €${p.totalPaid.toFixed(2)} &nbsp;·&nbsp; Ontvangen: €${p.totalReceived.toFixed(2)}
+          </div>
+          <div class="skip-counter">${dots}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="removePlayer(${i})">✕</button>
+      </div>`;
+  }).join('');
+}
+
+// ---- RONDE ----
+function renderRonde() {
+  renderPenalties();
+  renderBids();
+}
+
+function renderPenalties() {
+  const el = document.getElementById('penalty-section');
+  const penalized = state.players.filter(p => p.penalized);
+  if (!penalized.length) { el.innerHTML = ''; return; }
+  el.innerHTML = penalized.map(p => `
+    <div class="penalty-banner">
+      <strong>🚫 ${p.name} is gestraft!</strong>
+      <p>Moet de hele groep 1x uitnodigen. Na het inviten is de straf opgeheven.</p>
+      <button class="btn btn-success btn-sm" style="margin-top:10px" onclick="clearPenalty('${p.name}')">✅ Straf voldaan</button>
+    </div>`).join('');
+}
+
+function clearPenalty(name) {
+  const p = state.players.find(x => x.name === name);
+  if (p) { p.penalized = false; p.skipStreak = 0; save(); renderRonde(); renderSpelers(); toast(`${name} is vrij! 🎊`); }
+}
+
+function renderBids() {
+  const el = document.getElementById('bid-section');
+  if (!state.players.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🎲</div><p>Voeg eerst spelers toe.</p></div>`;
+    return;
+  }
+
+  const eligible = state.players.filter(p => !p.penalized);
+
+  if (state.roundActive && state.roundResult) {
+    renderResult();
+    return;
+  }
+
+  if (!state.roundActive) {
+    state.currentBids = {};
+    state.roundActive = true;
+  }
+
+  const savedTotal = state.dinnerTotal || '';
+  let html = `<div class="card"><div class="card-title">🧾 Rekening</div>
+    <div class="field">
+      <label>Totaal van de rekening</label>
+      <div class="bid-input-row">
+        <input type="number" min="0" step="0.01" placeholder="€ bijv. 87.50" id="dinner-total-input" value="${savedTotal}" oninput="saveDinnerTotal()" />
+      </div>
+    </div>
+    ${savedTotal ? `<div id="dinner-total-preview" style="font-size:13px;color:var(--muted);margin-bottom:4px">Rekening: <strong style="color:var(--text)">€${parseFloat(savedTotal).toFixed(2)}</strong></div>` : ''}
+  </div>
+  <div class="card"><div class="card-title">💰 Bod opgeven</div>`;
+
+  eligible.forEach(p => {
+    const bid = state.currentBids[p.name];
+    if (bid === undefined) {
+      // Not yet submitted
+      html += `
+        <div class="bid-item" id="bid-${p.name.replace(/\s/g,'_')}">
+          <div style="font-weight:500;font-size:15px">${p.name}</div>
+          <div class="bid-input-row">
+            <input type="number" min="0" step="0.01" placeholder="€ bod" id="input-${p.name.replace(/\s/g,'_')}" />
+            <button class="btn btn-primary btn-sm" onclick="submitBid('${p.name}')">✓</button>
+            <button class="btn btn-ghost btn-sm" onclick="submitSkip('${p.name}')">Pas</button>
+          </div>
+        </div>`;
+    } else if (bid === 'skip') {
+      html += `<div class="bid-item skipped"><span style="font-weight:500">${p.name}</span><span class="badge badge-muted">Pas</span></div>`;
+    } else {
+      html += `<div class="bid-item submitted"><span style="font-weight:500">${p.name}</span><span class="badge badge-success">✓ Verstuurd</span></div>`;
+    }
+  });
+
+  const allDone = eligible.every(p => state.currentBids[p.name] !== undefined);
+  if (allDone && eligible.length > 0) {
+    html += `<div class="divider"></div><button class="btn btn-primary btn-full" onclick="resolveRound()">🎲 Bekijk uitslag!</button>`;
+  }
+
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+function saveDinnerTotal() {
+  const val = parseFloat(document.getElementById('dinner-total-input')?.value);
+  state.dinnerTotal = isNaN(val) ? '' : val;
+  save();
+}
+
+function submitBid(name) {
+  const key = name.replace(/\s/g,'_');
+  const val = parseFloat(document.getElementById('input-' + key)?.value);
+  if (isNaN(val) || val < 0) return toast('Voer een geldig bedrag in!');
+  state.currentBids[name] = val;
+  save(); renderBids();
+}
+
+function submitSkip(name) {
+  state.currentBids[name] = 'skip';
+  save(); renderBids();
+}
+
+function resolveRound() {
+  const eligible = state.players.filter(p => !p.penalized);
+  const bids = eligible.map(p => ({ name: p.name, bid: state.currentBids[p.name] }));
+  const realBids = bids.filter(b => b.bid !== 'skip' && b.bid !== undefined);
+
+  // Update skip streaks
+  bids.forEach(b => {
+    const p = state.players.find(x => x.name === b.name);
+    if (!p) return;
+    if (b.bid === 'skip') {
+      p.skipStreak++;
+      if (p.skipStreak >= 3) { p.penalized = true; }
+    } else {
+      p.skipStreak = 0;
+    }
+  });
+
+  let result;
+  if (!realBids.length) {
+    // everyone skipped — no winner
+    result = { noWinner: true, bids, date: new Date().toLocaleDateString('nl-NL') };
+  } else {
+    // find highest bidder
+    realBids.sort((a, b) => b.bid - a.bid);
+    const winner = realBids[0];
+    const others = realBids.slice(1);
+    const pot = others.reduce((sum, b) => sum + b.bid, 0);
+
+    // winner pays, receives pot
+    const w = state.players.find(p => p.name === winner.name);
+    if (w) { w.totalPaid += parseFloat(winner.bid); w.totalReceived += pot; }
+    others.forEach(o => {
+      const p = state.players.find(x => x.name === o.name);
+      if (p) p.totalReceived += 0; // they pay nothing
+    });
+
+    result = {
+      winner: winner.name,
+      winnerBid: winner.bid,
+      pot,
+      dinnerTotal: state.dinnerTotal || null,
+      net: winner.bid - pot,
+      bids,
+      date: new Date().toLocaleDateString('nl-NL'),
+    };
+  }
+
+  state.roundResult = result;
+  state.history.unshift(result);
+  save();
+  renderRonde();
+  renderSpelers();
+}
+
+function renderResult() {
+  const r = state.roundResult;
+  const el = document.getElementById('bid-section');
+
+  if (r.noWinner) {
+    el.innerHTML = `
+      <div class="card">
+        <div class="result-hero">
+          <div class="result-crown">😅</div>
+          <div class="result-name">Iedereen pastte</div>
+          <div class="result-label">geen winnaar deze ronde</div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="newRound()">🔄 Nieuwe ronde</button>
+      </div>`;
+    return;
+  }
+
+  const newlyPenalized = state.players.filter(p => p.penalized);
+  const hasDinnerTotal = r.dinnerTotal && r.dinnerTotal > 0;
+  const realCost = hasDinnerTotal ? (r.dinnerTotal - r.pot) : null;
+  const netVsDinner = hasDinnerTotal ? (r.pot - r.winnerBid) : null; // pos = winner profited vs paying full
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="result-hero">
+        <div class="result-crown">👑</div>
+        <div class="result-name">${r.winner}</div>
+        <div class="result-label">betaalt de rekening</div>
+        ${hasDinnerTotal ? `
+          <div style="margin:14px 0 6px;padding:12px 16px;background:rgba(0,0,0,.25);border-radius:10px;text-align:left">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:14px">
+              <span style="color:var(--muted)">🧾 Rekening totaal</span>
+              <span style="font-weight:700">€${parseFloat(r.dinnerTotal).toFixed(2)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:14px">
+              <span style="color:var(--muted)">💸 Ontvangen van rest</span>
+              <span style="font-weight:700;color:var(--success)">+€${r.pot.toFixed(2)}</span>
+            </div>
+            <div style="height:1px;background:var(--border);margin:8px 0"></div>
+            <div style="display:flex;justify-content:space-between;font-size:15px">
+              <span style="color:var(--muted)">🏦 Wat ${r.winner} echt betaalt</span>
+              <span style="font-weight:700;color:${realCost <= 0 ? 'var(--success)' : 'var(--accent)'}">€${realCost.toFixed(2)}</span>
+            </div>
+            ${realCost <= 0 ? `<div style="font-size:12px;color:var(--success);margin-top:4px">🤑 Wint €${Math.abs(realCost).toFixed(2)} netto!</div>` : `<div style="font-size:12px;color:var(--muted);margin-top:4px">= €${parseFloat(r.dinnerTotal).toFixed(2)} − €${r.pot.toFixed(2)} ontvangen</div>`}
+          </div>
+        ` : `
+          <div class="result-amount">+€${r.pot.toFixed(2)}</div>
+          <div class="result-detail">ontvangt van de rest &nbsp;·&nbsp; bood €${r.winnerBid.toFixed(2)}</div>
+          <div class="result-detail" style="margin-top:6px;color:${r.net >= 0 ? 'var(--success)' : 'var(--danger)'}">
+            Netto t.o.v. bod: ${r.net >= 0 ? '+' : ''}€${Math.abs(r.net).toFixed(2)} ${r.net >= 0 ? '🤑' : '😬'}
+          </div>
+          <div class="result-detail" style="margin-top:4px;color:var(--muted);font-size:11px">Vul het rekening-totaal in voor de echte kosten</div>
+        `}
+      </div>
+
+      <div class="breakdown">
+        ${r.bids.map(b => {
+          const isWinner = b.name === r.winner;
+          const isSkip = b.bid === 'skip';
+          const p = state.players.find(x => x.name === b.name);
+          const penStr = (p && p.penalized) ? ' <span class="badge badge-danger">🚫 STRAF</span>' : '';
+          return `
+            <div class="breakdown-row ${isWinner ? 'winner' : isSkip ? 'skipper' : ''}">
+              <span>${isWinner ? '👑 ' : isSkip ? '⏭️ ' : ''}${b.name}${penStr}</span>
+              <span style="font-weight:700">${isSkip ? 'Pas' : '€' + parseFloat(b.bid).toFixed(2)}</span>
+            </div>`;
+        }).join('')}
+      </div>
+
+      ${newlyPenalized.length ? `<div style="margin-top:12px" class="penalty-banner"><strong>⚠️ Nieuwe straf!</strong><p>${newlyPenalized.map(p=>p.name).join(', ')} ${newlyPenalized.length===1?'heeft':'hebben'} 3x gepast. Trakteer de groep! 🍽️</p></div>` : ''}
+
+      <div class="divider"></div>
+      <button class="btn btn-primary btn-full" onclick="newRound()">🔄 Nieuwe ronde</button>
+    </div>`;
+}
+
+function newRound() {
+  state.roundActive = false;
+  state.roundResult = null;
+  state.currentBids = {};
+  save();
+  renderRonde();
+}
+
+// ---- GESCHIEDENIS ----
+function renderGeschiedenis() {
+  const el = document.getElementById('history-list');
+  if (!state.history.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📜</div><p>Nog geen ronden gespeeld.</p></div>`;
+    return;
+  }
+  el.innerHTML = state.history.map((r, i) => {
+    if (r.noWinner) return `
+      <div class="round-card">
+        <div class="round-header"><span class="round-num">Ronde ${state.history.length - i}</span><span class="round-date">${r.date}</span></div>
+        <div style="color:var(--muted);font-size:14px">Iedereen pastte — geen winnaar</div>
+      </div>`;
+    const bidStr = r.bids.map(b => `${b.name}: ${b.bid === 'skip' ? 'pas' : '€'+parseFloat(b.bid).toFixed(2)}`).join(' · ');
+    const dinnerStr = r.dinnerTotal ? ` · rekening €${parseFloat(r.dinnerTotal).toFixed(2)}` : '';
+    return `
+      <div class="round-card">
+        <div class="round-header"><span class="round-num">Ronde ${state.history.length - i}</span><span class="round-date">${r.date}</span></div>
+        <div class="round-winner">👑 ${r.winner} betaalde · ontvangen: €${r.pot.toFixed(2)}${dinnerStr}</div>
+        <div class="round-bids">${bidStr}</div>
+      </div>`;
+  }).join('');
+}
+
+// ---- RESET ----
+function resetAll() {
+  if (!confirm('Alles wissen? Dit verwijdert alle spelers en historie.')) return;
+  localStorage.removeItem('wiebetaalt');
+  location.reload();
+}
+
+// ---- INIT ----
+renderSpelers();
+</script>
+</body>
+</html>
